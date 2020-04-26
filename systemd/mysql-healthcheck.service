@@ -1,5 +1,5 @@
 [Unit]
-Description=An HTTP daemon to perform MySQL health checks
+Description=mysql-healthcheck - a utility to perform health checks on MySQL clusters
 
 [Service]
 Type=simple
