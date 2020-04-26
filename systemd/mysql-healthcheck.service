@@ -1,0 +1,11 @@
+[Unit]
+Description=An HTTP daemon to perform MySQL health checks
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5s
+ExecStart=/usr/local/bin/mysql-healthcheck -d
+
+[Install]
+WantedBy=multi-user.target
