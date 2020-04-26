@@ -6,6 +6,7 @@ Type=simple
 Restart=always
 RestartSec=5s
 ExecStart=/usr/local/bin/mysql-healthcheck -d
+ExecReload=/bin/kill -HUP $MAINPID
 
 [Install]
 WantedBy=multi-user.target
