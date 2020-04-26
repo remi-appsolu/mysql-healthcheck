@@ -145,5 +145,4 @@ func serveHTTPHealthCheck(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		w.Write([]byte("MySQL cluster node is not ready."))
 	}
-	w.Header().Add("Connection", "close")
 }
