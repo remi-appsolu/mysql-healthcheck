@@ -12,6 +12,21 @@ Compile a binary using `go build` for your target OS and architecture.
 ## Running
 When executed from the CLI without the `-d` flag, the application will run in standalone mode.  This can be used for non-HTTP-based health checking needs, or to test your config file.
 
+The `-v` flag enables debug logging.
+
+__Example__:
+```
+root@database01:~# mysql-healthcheck
+time="2020-04-26T05:00:30Z" level=info msg="MySQL cluster node is ready."
+
+root@database01:~# mysql-healthcheck -v
+time="2020-04-26T05:00:31Z" level=debug msg="Running in standalone mode."
+time="2020-04-26T05:00:31Z" level=debug msg="Config loaded from /etc/default/mysql-healthcheck.yaml"
+time="2020-04-26T05:00:31Z" level=debug msg="Constructed DSN for MySQL: testuser:<redacted>@tcp(database01.mydomain.net:3306)/?timeout=1s&tls=true"
+time="2020-04-26T05:00:31Z" level=debug msg="Processing standalone health check."
+time="2020-04-26T05:00:31Z" level=info msg="MySQL cluster node is ready."
+```
+
 To run as a systemd service:
   1. place the included `systemd/mysql-healthcheck.service` unit file in `/etc/systemd/system/`
   2. Run `systemctl enable mysql-healthcheck` to start at boot time.
