@@ -44,4 +44,4 @@ changelog:
     - '^test:'
 signs:
   - artifacts: checksum
-    args: ["--batch", "-u", "E87EBA77EB0E14EE", "--output", "${signature}", "--detach-sign", "${artifact}"]
+    args: ["--batch", "-u", "D121C72DD3E53449", "--output", "${signature}", "--detach-sign", "${artifact}"]
