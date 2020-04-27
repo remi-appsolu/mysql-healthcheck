@@ -5,10 +5,10 @@ A self-contained binary to run health checks on MySQL and MariaDB clusters.  Sup
 ### Linux
 1. Download the appropriate binary for your architecture to `/usr/local/bin/`
 2. Make the binary executable with `chmod +x /usr/local/bin/mysql-healthcheck`
-3. For systemd installation:
-  1. Place the `mysql-healthcheck.service` unit file in your systemd system service directory (usually `/etc/systemd/system/`).
-  2. Enable the service with `systemd enable mysql-healthcheck.service`
-4. Create a configuration file as instructed below.
+3. Create a configuration file as instructed below.
+4. For systemd installation:
+    1. Place the `mysql-healthcheck.service` unit file in your systemd system service directory (usually `/etc/systemd/system/`).
+    2. Enable the service with `systemd enable mysql-healthcheck.service`
 5. Run the application from the command line, or run `systemd start mysql-healthcheck` to start the service.
 
 ### Other Platforms
