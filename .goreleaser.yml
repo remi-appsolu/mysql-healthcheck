@@ -24,7 +24,7 @@ archives:
   replacements:
     amd64: x86_64
     386: i386
-    darwin: macOS
+    darwin: macos
   format_overrides:
   - goos: windows
     format: zip
@@ -32,6 +32,7 @@ archives:
     format: zip
   files:
   - none*
+  name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
 checksum:
   name_template: 'checksums.txt'
 changelog:

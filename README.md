@@ -1,9 +1,13 @@
 # mysql-healthceck
 A self-contained binary to run health checks on MySQL and MariaDB clusters.  Supports Percona XtraDB, Galera, and other wsrep-based clustering applications.
 
+* Linux [x86_64](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_linux_x86_64.gz) / [i386](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_linux_i386.gz) / [ARMv6](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_linux_armv6.gz) / [ARMv7](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_linux_armv7.gz) / [ARM64](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_linux_arm64.gz)
+* Windows [x86_64](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_windows_x86_64.zip) / [x86](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_windows_x86.zip)
+* MacOS [x86_64](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_macos_x86_64.zip)
+
 ## Installation
 ### Linux
-1. Download and extract the appropriate binary for your architecture to `/usr/local/bin/`
+1. Download and `gunzip` the appropriate binary for your architecture to `/usr/local/bin/`
 2. Make the binary executable with `chmod +x /usr/local/bin/mysql-healthcheck`
 3. Create a configuration file as instructed below.
 4. For systemd installation:
