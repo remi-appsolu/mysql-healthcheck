@@ -4,11 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"flag"
-	"io"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -17,38 +18,45 @@ import (
 )
 
 var (
-	db     *sql.DB
-	config *viper.Viper
-	server *http.Server
-	logger = logrus.New()
+	// appName name of this application
+	appName = "mysql-healthcheck"
+	// version of this application - this will be set using ldflags during compile time
+	version = "devel"
+	db      *sql.DB
+	config  *viper.Viper
+	server  *http.Server
+	logger  = logrus.New()
 )
 
-var daemon = flag.Bool("d", false, "Run as a daemon and listen for HTTP connections on a socket")
-var verbose = flag.Bool("v", false, "verbose")
+var daemonMode = flag.Bool("d", false, "Run as a daemon and listen for HTTP connections on a socket")
+var logVerbose = flag.Bool("v", false, "Verbose (debug) logging")
+var printVersion = flag.Bool("V", false, "Print version and exit")
 
 func main() {
-	logFile, err := os.OpenFile("/var/log/mysql-healthcheck.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err == nil {
-		logger.Out = io.MultiWriter(os.Stdout, logFile)
-	}
 
 	flag.Parse()
 
-	if *verbose {
+	if *printVersion {
+		fmt.Printf("%s %s, compiled for %s %s using %s", appName, version, runtime.GOOS, runtime.GOARCH, runtime.Version())
+		os.Exit(0)
+	}
+
+	if *logVerbose {
 		logger.SetLevel(logrus.DebugLevel)
 	}
 
-	switch *daemon {
+	switch *daemonMode {
 	case true:
 		runDaemon()
 	default:
-		logger.Debug("Running in standalone mode.")
 		runStandaloneHealthCheck()
 	}
 }
 
+// runDaemon initializes config and database objects, listens for OS signals and starts an HTTP server instance.
 func runDaemon() {
 	sigs := make(chan os.Signal, 1)
+	shutdown := false
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
 	go func() {
@@ -58,22 +66,27 @@ func runDaemon() {
 			switch s {
 			case syscall.SIGHUP:
 				logger.Info("Triggering reload of config, database connections and HTTP server...")
-				stopDaemon()
+				stopServer()
 			case syscall.SIGINT, syscall.SIGTERM:
-				stopDaemon()
-				os.Exit(0)
+				shutdown = true
+				stopServer()
+
 			}
 		}
 	}()
 
-	for true {
-		LoadConfig()
+	for !shutdown {
+		CreateConfig()
 		OpenDatabase()
-		startDaemon()
+		// startServer() will spawn
+		startServer()
+		// db.Close() will only run once HTTP server has shut down - either for reload or due to termination
+		db.Close()
 	}
 }
 
-func startDaemon() {
+// startServer spawns an HTTP server and listens indefinitely until the server is shut down
+func startServer() {
 	socket := net.JoinHostPort(config.GetString("http.addr"), config.GetString("http.port"))
 	server = createHTTPServer(socket)
 	logger.Info("Starting HTTP server.")
@@ -82,7 +95,8 @@ func startDaemon() {
 	}
 }
 
-func stopDaemon() {
+// stopServer signals to the running HTTP server to complete existing requests and shut down
+func stopServer() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -93,6 +107,7 @@ func stopDaemon() {
 	logger.Info("HTTP server stopped.")
 }
 
+// createHTTPServer creates and configures a new instance of an HTTP server
 func createHTTPServer(socket string) *http.Server {
 	path := config.GetString("http.path")
 	logger.Debugf("Registering health check endpoint at URI path %s", path)
@@ -105,9 +120,9 @@ func createHTTPServer(socket string) *http.Server {
 }
 
 func runStandaloneHealthCheck() {
-	LoadConfig()
+	CreateConfig()
 	OpenDatabase()
-	logger.Debug("Processing standalone health check.")
+	logger.Debug("Running standalone health check.")
 	switch RunStatusCheck() {
 	case Available:
 		logger.Info("MySQL cluster node is ready.")
