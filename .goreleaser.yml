@@ -20,7 +20,7 @@ builds:
   - goos: darwin
     goarch: 386
 archives:
-- format: binary
+- format: gz
   replacements:
     amd64: x86_64
     386: i386
@@ -28,6 +28,10 @@ archives:
   format_overrides:
   - goos: windows
     format: zip
+  - goos: darwin
+    format: zip
+  files:
+  - none*
 checksum:
   name_template: 'checksums.txt'
 changelog:
