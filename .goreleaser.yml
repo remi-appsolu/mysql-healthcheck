@@ -42,3 +42,6 @@ changelog:
     exclude:
     - '^docs:'
     - '^test:'
+signs:
+  - artifacts: checksum
+    args: ["--batch", "-u", "E87EBA77EB0E14EE", "--output", "${signature}", "--detach-sign", "${artifact}"]
