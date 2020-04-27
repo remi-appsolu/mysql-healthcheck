@@ -3,7 +3,7 @@ A self-contained binary to run health checks on MySQL and MariaDB clusters.  Sup
 
 ## Installation
 ### Linux
-1. Download the appropriate binary for your architecture to `/usr/local/bin/`
+1. Download and extract the appropriate binary for your architecture to `/usr/local/bin/`
 2. Make the binary executable with `chmod +x /usr/local/bin/mysql-healthcheck`
 3. Create a configuration file as instructed below.
 4. For systemd installation:
@@ -11,8 +11,13 @@ A self-contained binary to run health checks on MySQL and MariaDB clusters.  Sup
     2. Enable the service with `systemd enable mysql-healthcheck.service`
 5. Run the application from the command line, or run `systemd start mysql-healthcheck` to start the service.
 
+### Windows/MacOS
+1. Download and unzip the appropriate binary to any filesystem location.
+2. Create a configuration file as instructed below.
+3. Run the application from the command line, or follow the appropriate steps for your platform to run it as an OS service.
+
 ### Other Platforms
-Compile a binary using `go build` for your target OS and architecture.
+Compile a binary for your target OS and architecture with `go build -ldflags="-X 'main.version=custom'"`.
 
 ## Usage
 ```
@@ -34,11 +39,6 @@ time="2020-04-26T05:00:31Z" level=debug msg="Constructed DSN for MySQL: testuser
 time="2020-04-26T05:00:31Z" level=debug msg="Running standalone health check."
 time="2020-04-26T05:00:31Z" level=info msg="MySQL cluster node is ready."
 ```
-
-To run as a systemd service:
-  1. place the included `systemd/mysql-healthcheck.service` unit file in `/etc/systemd/system/`
-  2. Run `systemctl enable mysql-healthcheck` to start at boot time.
-  3. Run `systemctl start mysql-healthcheck` once you've created a configuration.
 
 ## Configuration
 ### Location
