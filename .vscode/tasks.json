@@ -1,0 +1,145 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "clean build",
+            "type": "shell",
+            "command": "find ./build/ -type f -name \"mysql-healthcheck*\" -delete",
+            "problemMatcher": []
+        },
+        {
+            "label": "build mac",
+            "options": {
+                "env": {
+                    "GOOS": "darwin",
+                    "GOARCH": "amd64"
+                }
+            },
+            "type": "shell",
+            "command": "go",
+            "args": ["build", "-o", "build/mysql-healthcheck.${GOOS}_${GOARCH}"],
+            "group": "build",
+            "problemMatcher": [
+                "$go"
+            ]
+        },
+        {
+            "label": "build windows_x64",
+            "options": {
+                "env": {
+                    "GOOS": "windows",
+                    "GOARCH": "amd64"
+                }
+            },
+            "type": "shell",
+            "command": "go",
+            "args": ["build", "-o", "build/mysql-healthcheck.${GOOS}_${GOARCH}"],
+            "group": "build",
+            "problemMatcher": [
+                "$go"
+            ]
+        },
+        {
+            "label": "build windows_x86",
+            "options": {
+                "env": {
+                    "GOOS": "windows",
+                    "GOARCH": "386"
+                }
+            },
+            "type": "shell",
+            "command": "go",
+            "args": ["build", "-o", "build/mysql-healthcheck.${GOOS}_${GOARCH}"],
+            "group": "build",
+            "problemMatcher": [
+                "$go"
+            ]
+        },
+        {
+            "label": "build linux_x64",
+            "options": {
+                "env": {
+                    "GOOS": "linux",
+                    "GOARCH": "amd64"
+                }
+            },
+            "type": "shell",
+            "command": "go",
+            "args": ["build", "-o", "build/mysql-healthcheck.${GOOS}_${GOARCH}"],
+            "group": "build",
+            "problemMatcher": [
+                "$go"
+            ]
+        },
+        {
+            "label": "build linux_x86",
+            "options": {
+                "env": {
+                    "GOOS": "linux",
+                    "GOARCH": "386"
+                }
+            },
+            "type": "shell",
+            "command": "go",
+            "args": ["build", "-o", "build/mysql-healthcheck.${GOOS}_${GOARCH}"],
+            "group": "build",
+            "problemMatcher": [
+                "$go"
+            ]
+        },
+        {
+            "label": "build linux_armv6",
+            "options": {
+                "env": {
+                    "GOOS": "linux",
+                    "GOARCH": "arm",
+                    "GOARM": "6"
+                }
+            },
+            "type": "shell",
+            "command": "go",
+            "args": ["build", "-o", "build/mysql-healthcheck.${GOOS}_${GOARCH}v${GOARM}"],
+            
+            "group": "build",
+            "problemMatcher": [
+                "$go"
+            ]
+        },
+        {
+            "label": "build linux_armv7",
+            "options": {
+                "env": {
+                    "GOOS": "linux",
+                    "GOARCH": "arm",
+                    "GOARM": "7"
+                }
+            },
+            "type": "shell",
+            "command": "go",
+            "args": ["build", "-o", "build/mysql-healthcheck.${GOOS}_${GOARCH}v${GOARM}"],
+            
+            "group": "build",
+            "problemMatcher": [
+                "$go"
+            ]
+        },
+        {
+            "label": "build linux_arm64",
+            "options": {
+                "env": {
+                    "GOOS": "linux",
+                    "GOARCH": "arm64"
+                }
+            },
+            "type": "shell",
+            "command": "go",
+            "args": ["build", "-o", "build/mysql-healthcheck.${GOOS}_${GOARCH}"],
+            "group": "build",
+            "problemMatcher": [
+                "$go"
+            ]
+        }
+    ]
+}

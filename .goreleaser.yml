@@ -2,7 +2,8 @@ before:
   hooks:
     - go mod download
 builds:
-- env:
+-
+  env:
   - CGO_ENABLED=0
   goos:
   - darwin
@@ -20,7 +21,7 @@ builds:
   - goos: darwin
     goarch: 386
 archives:
-- format: gz
+-
   replacements:
     amd64: x86_64
     386: i386
