@@ -1,4 +1,12 @@
-# mysql-healthceck
+# mysql-healthcheck
+![Go](https://img.shields.io/github/go-mod/go-version/danclough/mysql-healthcheck)
+![reviewdog](https://github.com/danclough/mysql-healthcheck/workflows/reviewdog/badge.svg)
+![Build](https://img.shields.io/github/workflow/status/danclough/mysql-healthcheck/goreleaser)
+[![Release](https://img.shields.io/github/release/danclough/mysql-healthcheck.svg)](https://github.com/danclough/mysql-healthcheck/releases/latest)
+[![License](https://img.shields.io/github/license/danclough/mysql-healthcheck)](https://github.com/danclough/mysql-healthcheck/blob/master/LICENSE)
+![Downloads](https://img.shields.io/github/downloads/danclough/mysql-healthcheck/total)
+[![Issues](https://img.shields.io/github/issues/danclough/mysql-healthcheck)](https://github.com/danclough/mysql-healthcheck/issues)
+
 A self-contained binary to run health checks on MySQL and MariaDB clusters.  Supports Percona XtraDB, Galera, and other wsrep-based clustering applications.
 
 * Linux [x86_64](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_linux_x86_64.tar.gz) / [i386](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_linux_i386.tar.gz) / [ARMv6](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_linux_armv6.tar.gz) / [ARMv7](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_linux_armv7.tar.gz) / [ARM64](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_linux_arm64.tar.gz)
@@ -7,7 +15,7 @@ A self-contained binary to run health checks on MySQL and MariaDB clusters.  Sup
 
 ## Installation
 ### Linux
-1. Download and `gunzip` the appropriate binary for your architecture to `/usr/local/bin/`
+1. Download and extract the appropriate binary for your architecture to `/usr/local/bin/`
 2. Make the binary executable with `chmod +x /usr/local/bin/mysql-healthcheck`
 3. Create a configuration file as instructed below.
 4. For systemd installation:

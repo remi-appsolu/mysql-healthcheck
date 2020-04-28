@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-// ReadConfig reloads config from file
-func ReadConfig() {
+// readConfig reads the application config from a file
+func readConfig() {
 	if err := config.ReadInConfig(); err != nil { // Handle errors reading the config file
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found; ignore error if desired
@@ -17,11 +17,13 @@ func ReadConfig() {
 			logger.Fatal(err)
 		}
 	}
+
 	if len(config.ConfigFileUsed()) == 0 {
 		logger.Warn("No config file found.  Using default configuration!")
 	} else if logger.IsLevelEnabled(logrus.DebugLevel) {
 		logger.Debugf("Config loaded from %s", config.ConfigFileUsed())
 	}
+
 	config.SetDefault("connection.host", "localhost")
 	config.SetDefault("connection.port", 3306)
 	config.SetDefault("connection.tls.enforced", false)
@@ -42,15 +44,18 @@ func ReadConfig() {
 	}
 }
 
-//CreateConfig creates a new config instance
+// CreateConfig creates a new config instance
 func CreateConfig() {
 	config = viper.New()
-	config.SetConfigName(appName)
+	config.SetConfigName(AppName)
+
 	workingDir, err := os.Getwd()
 	if err != nil {
 		logger.Fatal(err)
 	}
+
 	config.AddConfigPath(workingDir)
+
 	if runtime.GOOS == "windows" {
 		config.AddConfigPath(os.Getenv("PROGRAMFILES"))
 		config.AddConfigPath(os.Getenv("LOCALAPPDATA"))
@@ -61,5 +66,5 @@ func CreateConfig() {
 		config.AddConfigPath("$HOME/.config")
 	}
 
-	ReadConfig()
+	readConfig()
 }

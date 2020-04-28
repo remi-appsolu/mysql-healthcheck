@@ -21,6 +21,9 @@ type WsrepStatus int
 type DatabaseStatus int
 
 const (
+	databaseMaxOpenConns    = 5
+	databaseConnMaxLifetime = time.Minute * 5
+
 	// WsrepLocalStateQuery returns status of local wsrep instance
 	WsrepLocalStateQuery = "SHOW STATUS LIKE 'wsrep_local_state';"
 	// ReadOnlyQuery determines if node is in read-only mode
@@ -31,7 +34,7 @@ const (
 	// Donor means the node is providing SST to a joining node
 	Donor WsrepStatus = 2
 	// Joined means the node has received the SST but is not synced yet
-	Joined WsrepStatus = 3
+	Joined WsrepStatus = 3 //nolint // Not explicitly used yet, but here for reference
 	// Synced means the node is in the cluster and fully operational
 	Synced WsrepStatus = 4
 
@@ -49,20 +52,23 @@ const (
 func OpenDatabase() {
 	var err error
 	dsnConfig := buildDSNConfig()
+
 	if logger.IsLevelEnabled(logrus.DebugLevel) {
 		sanitizedDsn := dsnConfig.Clone()
 		sanitizedDsn.Passwd = "<redacted>"
 		logger.Debug(fmt.Sprintf("Constructed DSN for MySQL: %s", sanitizedDsn.FormatDSN()))
 	}
+
 	db, err = sql.Open("mysql", dsnConfig.FormatDSN())
 	if err != nil {
 		logger.Fatal(err)
 	}
 
-	db.SetMaxOpenConns(5)
-	db.SetConnMaxLifetime(time.Minute * 5)
+	db.SetMaxOpenConns(databaseMaxOpenConns)
+	db.SetConnMaxLifetime(databaseConnMaxLifetime)
 }
 
+// buildDSNConfig constructs a mysql.Config instance from the provided application connection config.
 func buildDSNConfig() *mysql.Config {
 	dsnConfig := mysql.NewConfig()
 	dsnConfig.Params = make(map[string]string)
@@ -78,9 +84,11 @@ func buildDSNConfig() *mysql.Config {
 			dsnConfig.Addr = config.GetString("connection.host")
 		}
 	}
+
 	if config.IsSet("connection.user") {
 		dsnConfig.User = config.GetString("connection.user")
 	}
+
 	if config.IsSet("connection.password") {
 		dsnConfig.Passwd = config.GetString("connection.password")
 	}
@@ -92,7 +100,10 @@ func buildDSNConfig() *mysql.Config {
 		if config.IsSet("connection.tls.ca") {
 			// Full TLS is enabled with custom CA
 			tlsConfig := buildTLSConfig()
-			mysql.RegisterTLSConfig("custom", tlsConfig)
+			err := mysql.RegisterTLSConfig("custom", tlsConfig)
+			if err != nil {
+				logger.Fatalf("Failed to register custom TLS configuration: %v", err)
+			}
 			dsnConfig.TLSConfig = "custom"
 		} else if config.GetBool("connection.tls.required") {
 			// Full TLS is enabled
@@ -103,9 +114,9 @@ func buildDSNConfig() *mysql.Config {
 	dsnConfig.Timeout = time.Second
 
 	return dsnConfig
-
 }
 
+// buildTLSConfig creates a tls.Config instance from the provided application TLS config.
 func buildTLSConfig() *tls.Config {
 	var tlsConfig tls.Config
 
@@ -125,19 +136,22 @@ func buildTLSConfig() *tls.Config {
 	}
 
 	if cnxTLSCfg.IsSet("cert") && cnxTLSCfg.IsSet("key") {
-		clientCert := make([]tls.Certificate, 0, 1)
 		certs, err := tls.LoadX509KeyPair(cnxTLSCfg.GetString("cert"), cnxTLSCfg.GetString("key"))
 		if err != nil {
 			logger.Error(err)
 		}
+
+		clientCert := make([]tls.Certificate, 0, 1)
 		clientCert = append(clientCert, certs)
+
 		tlsConfig.Certificates = clientCert
 	}
+
 	return &tlsConfig
 }
 
-// RunStatusCheck performs a health check on the database.
-func RunStatusCheck() DatabaseStatus {
+// GetDatabaseStatus performs a health check on the database server and returns an int type enumerating the specific state.
+func GetDatabaseStatus() DatabaseStatus {
 	err := db.Ping()
 	if err != nil {
 		logger.Error(err)
@@ -148,41 +162,61 @@ func RunStatusCheck() DatabaseStatus {
 		if !config.GetBool("options.available_when_readonly") && isReadOnly() {
 			return ReadOnly
 		}
+
 		return Available
 	}
+
 	return NotReady
 }
 
+// getWsrepLocalState queries the wsrep_local_state status from the database server and returns an int type enumerating the specific state.
 func getWsrepLocalState() WsrepStatus {
 	stmtOut, err := db.Prepare(WsrepLocalStateQuery)
 	if err != nil {
-		logger.Error(err)
+		logger.Errorf("Error preparing wsrep_local_state query: %v", err)
 		return Joining
 	}
-	defer stmtOut.Close()
+	defer func() {
+		if err := stmtOut.Close(); err != nil {
+			logger.Errorf("Error closing prepared statement: %v", err)
+		}
+	}()
 
 	var variable string
+
 	var value int
 
 	err = stmtOut.QueryRow().Scan(&variable, &value)
+	if err != nil {
+		logger.Errorf("Error executing wsrep_local_state query: %v", err)
+		return Joining
+	}
 
 	return WsrepStatus(value)
 }
 
+// isReadOnly queries the global variable read_only from the database server and returns whether the server is in read-only mode.
 func isReadOnly() bool {
 	stmtOut, err := db.Prepare(ReadOnlyQuery)
 	if err != nil {
-		logger.Error(err)
+		logger.Errorf("Error preparing read_only query: %v", err)
 	}
-	defer stmtOut.Close()
+	defer func() {
+		if err := stmtOut.Close(); err != nil {
+			logger.Errorf("Error closing prepared statement: %v", err)
+		}
+	}()
 
 	var variable string
+
 	var value string
 
 	err = stmtOut.QueryRow().Scan(&variable, &value)
+	if err != nil {
+		logger.Errorf("Error executing read_only query: %v", err)
+	}
 
-	switch value {
-	case "OFF":
+	if value == "OFF" {
 		return false
 	}
 	return true
