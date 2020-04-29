@@ -94,6 +94,10 @@ func runDaemon() {
 		httpHandler = NewHTTPServerHandler(config, dbHandler)
 
 		httpHandler.StartServer()
+
+		// HTTPHandler blocks here on HTTP server execution.  Next line will run
+		// only after the HTTP server is shutdown.
+
 		err = db.Close()
 		if err != nil {
 			logrus.Fatalf("Error closing the database connection: %v", err)
