@@ -21,6 +21,7 @@ func NewHTTPServerHandler(config *viper.Viper, dbHandler *DBHandler) *HTTPServer
 	instance := new(HTTPServerHandler)
 	instance.config = config
 	instance.dbHandler = dbHandler
+
 	return instance
 }
 

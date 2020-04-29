@@ -29,7 +29,8 @@ func main() {
 	flag.Parse()
 
 	if *printVersion {
-		fmt.Printf("%s version %s, compiled for %s %s using %s\n", AppName, version, runtime.GOOS, runtime.GOARCH, runtime.Version())
+		fmt.Printf("%s version %s, compiled for %s %s using %s\n", AppName,
+			version, runtime.GOOS, runtime.GOARCH, runtime.Version())
 		os.Exit(0)
 	}
 
@@ -81,6 +82,7 @@ func runDaemon() {
 		if err != nil {
 			logrus.Fatal(err)
 		}
+
 		defer func() {
 			err := db.Close()
 			if err != nil {
@@ -92,11 +94,15 @@ func runDaemon() {
 		httpHandler = NewHTTPServerHandler(config, dbHandler)
 
 		httpHandler.StartServer()
-		db.Close()
+		err = db.Close()
+		if err != nil {
+			logrus.Fatalf("Error closing the database connection: %v", err)
+		}
 	}
 }
 
-// RunStatusCheck queries the current state of the database and returns a boolean and status message indicating if the database is available.
+// RunStatusCheck queries the current state of the database and returns a boolean
+// and status message indicating if the database is available.
 func RunStatusCheck(dbHandler *DBHandler) (bool, string) {
 	switch dbHandler.GetStatus() {
 	case Available:
@@ -108,11 +114,13 @@ func RunStatusCheck(dbHandler *DBHandler) (bool, string) {
 	case NotReady:
 		return false, "MySQL cluster node is not ready."
 	}
+
 	return false, "Unknown error encountered running health check."
 }
 
-// runStandaloneHealthCheck runs a single health check against the target database and returns the result via log messages and os.Exit().
-func runStandaloneHealthCheck() {
+// runStandaloneHealthCheck runs a single health check against the target database
+// and returns the result via log messages and os.Exit().
+func runStandaloneHealthCheck() bool {
 	config := CreateConfig()
 	dsn := BuildDSN(config)
 
@@ -120,6 +128,7 @@ func runStandaloneHealthCheck() {
 	if err != nil {
 		logrus.Fatal(err)
 	}
+
 	defer func() {
 		err := db.Close()
 		if err != nil {
@@ -135,9 +144,9 @@ func runStandaloneHealthCheck() {
 
 	if ready {
 		logrus.Info(msg)
-		os.Exit(0)
 	} else {
 		logrus.Warn(msg)
-		os.Exit(1)
 	}
+
+	return ready
 }
