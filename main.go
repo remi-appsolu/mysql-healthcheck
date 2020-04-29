@@ -19,6 +19,9 @@ const (
 	// httpTimeout defines timeout period when gracefully shutting down HTTP server
 	httpTimeout = 30 * time.Second
 	// version of this application - changed during compile time using ldflags
+)
+
+var (
 	version = "DEV-snapshot"
 )
 
