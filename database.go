@@ -10,24 +10,32 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 
 	"github.com/go-sql-driver/mysql"
 )
 
-// WsrepStatus represents the state of the wsrep instance
+// DBHandler encapsulates all required objects to manage a database connection and run status checks.
+type DBHandler struct {
+	db                    *sql.DB
+	availableWhenDonor    bool
+	availableWhenReadOnly bool
+}
+
+// WsrepStatus represents the state of the wsrep process on the database server
 type WsrepStatus int
 
-// DatabaseStatus represents the overall state of the database
-type DatabaseStatus int
+// ServerStatus represents the state of the database server
+type ServerStatus int
 
 const (
 	databaseMaxOpenConns    = 5
 	databaseConnMaxLifetime = time.Minute * 5
 
-	// WsrepLocalStateQuery returns status of local wsrep instance
-	WsrepLocalStateQuery = "SHOW STATUS LIKE 'wsrep_local_state';"
-	// ReadOnlyQuery determines if node is in read-only mode
-	ReadOnlyQuery = "SHOW GLOBAL VARIABLES LIKE 'read_only';"
+	// wsrepLocalStateQuery returns status of local wsrep instance
+	wsrepLocalStateQuery = "SHOW STATUS LIKE 'wsrep_local_state';"
+	// readOnlyQuery determines if node is in read-only mode
+	readOnlyQuery = "SHOW GLOBAL VARIABLES LIKE 'read_only';"
 
 	// Joining means the node is in process of joining the cluster
 	Joining WsrepStatus = 1
@@ -39,37 +47,30 @@ const (
 	Synced WsrepStatus = 4
 
 	// Available means the node is ready to serve requests
-	Available DatabaseStatus = 1
+	Available ServerStatus = 1
 	// ReadOnly means the node is in read-only mode
-	ReadOnly DatabaseStatus = 2
+	ReadOnly ServerStatus = 2
 	// NotReady means the node is not available or not ready to serve requests
-	NotReady DatabaseStatus = 3
+	NotReady ServerStatus = 3
 	// Unavailable means we are unable to connect to the node
-	Unavailable DatabaseStatus = 4
+	Unavailable ServerStatus = 4
 )
 
-// OpenDatabase initializes the DB object for health check queries.
-func OpenDatabase() {
-	var err error
-	dsnConfig := buildDSNConfig()
+// CreateDBHandler instantiates a new DBHandler struct to hold the database connection and associated options.
+func CreateDBHandler(config *viper.Viper, db *sql.DB) *DBHandler {
+	instance := new(DBHandler)
+	instance.db = db
+	instance.availableWhenDonor = config.GetBool("options.available_when_donor")
+	instance.availableWhenReadOnly = config.GetBool("options.available_when_readonly")
 
-	if logger.IsLevelEnabled(logrus.DebugLevel) {
-		sanitizedDsn := dsnConfig.Clone()
-		sanitizedDsn.Passwd = "<redacted>"
-		logger.Debug(fmt.Sprintf("Constructed DSN for MySQL: %s", sanitizedDsn.FormatDSN()))
-	}
+	instance.db.SetMaxOpenConns(databaseMaxOpenConns)
+	instance.db.SetConnMaxLifetime(databaseConnMaxLifetime)
 
-	db, err = sql.Open("mysql", dsnConfig.FormatDSN())
-	if err != nil {
-		logger.Fatal(err)
-	}
-
-	db.SetMaxOpenConns(databaseMaxOpenConns)
-	db.SetConnMaxLifetime(databaseConnMaxLifetime)
+	return instance
 }
 
-// buildDSNConfig constructs a mysql.Config instance from the provided application connection config.
-func buildDSNConfig() *mysql.Config {
+// BuildDSN constructs a MySQL DSN from the provided connection config.
+func BuildDSN(config *viper.Viper) string {
 	dsnConfig := mysql.NewConfig()
 	dsnConfig.Params = make(map[string]string)
 
@@ -99,10 +100,10 @@ func buildDSNConfig() *mysql.Config {
 	} else {
 		if config.IsSet("connection.tls.ca") {
 			// Full TLS is enabled with custom CA
-			tlsConfig := buildTLSConfig()
+			tlsConfig := buildTLSConfig(config)
 			err := mysql.RegisterTLSConfig("custom", tlsConfig)
 			if err != nil {
-				logger.Fatalf("Failed to register custom TLS configuration: %v", err)
+				logrus.Fatalf("Failed to register custom TLS configuration: %v", err)
 			}
 			dsnConfig.TLSConfig = "custom"
 		} else if config.GetBool("connection.tls.required") {
@@ -113,32 +114,37 @@ func buildDSNConfig() *mysql.Config {
 
 	dsnConfig.Timeout = time.Second
 
-	return dsnConfig
+	if logrus.IsLevelEnabled(logrus.DebugLevel) {
+		sanitizedDsn := dsnConfig.Clone()
+		sanitizedDsn.Passwd = "<redacted>"
+		logrus.Debug(fmt.Sprintf("Constructed DSN for MySQL: %s", sanitizedDsn.FormatDSN()))
+	}
+
+	return dsnConfig.FormatDSN()
 }
 
 // buildTLSConfig creates a tls.Config instance from the provided application TLS config.
-func buildTLSConfig() *tls.Config {
+func buildTLSConfig(config *viper.Viper) *tls.Config {
 	var tlsConfig tls.Config
 
-	cnxTLSCfg := config.Sub("connection.tls")
 	rootCertPool := x509.NewCertPool()
 
-	if cnxTLSCfg.IsSet("ca") {
-		pem, err := ioutil.ReadFile(cnxTLSCfg.GetString("ca"))
+	if config.IsSet("connection.tls.ca") {
+		pem, err := ioutil.ReadFile(config.GetString("connection.tls.ca"))
 		if err != nil {
-			logger.Error(err)
+			logrus.Error(err)
 		}
 		if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
-			logger.Error("Failed to append PEM.")
+			logrus.Error("Failed to append PEM.")
 		} else {
 			tlsConfig.RootCAs = rootCertPool
 		}
 	}
 
-	if cnxTLSCfg.IsSet("cert") && cnxTLSCfg.IsSet("key") {
-		certs, err := tls.LoadX509KeyPair(cnxTLSCfg.GetString("cert"), cnxTLSCfg.GetString("key"))
+	if config.IsSet("connection.tls.cert") && config.IsSet("connection.tls.key") {
+		certs, err := tls.LoadX509KeyPair(config.GetString("connection.tls.cert"), config.GetString("connection.tls.key"))
 		if err != nil {
-			logger.Error(err)
+			logrus.Error(err)
 		}
 
 		clientCert := make([]tls.Certificate, 0, 1)
@@ -150,45 +156,53 @@ func buildTLSConfig() *tls.Config {
 	return &tlsConfig
 }
 
-// GetDatabaseStatus performs a health check on the database server and returns an int type enumerating the specific state.
-func GetDatabaseStatus() DatabaseStatus {
-	err := db.Ping()
+func (h *DBHandler) isConnected() bool {
+	err := h.db.Ping()
 	if err != nil {
-		logger.Error(err)
-		return Unavailable
+		logrus.Error(err)
+		return false
 	}
-	wsrepState := getWsrepLocalState()
-	if wsrepState == Synced || (wsrepState == Donor && config.GetBool("options.available_when_donor")) {
-		if !config.GetBool("options.available_when_readonly") && isReadOnly() {
-			return ReadOnly
+
+	return true
+}
+
+// GetStatus performs a health check on the database server and returns an int type enumerating the specific state.
+func (h *DBHandler) GetStatus() ServerStatus {
+	if h.isConnected() {
+		wsrepState := h.getWsrepLocalState()
+		if wsrepState == Synced || (wsrepState == Donor && h.availableWhenDonor) {
+			if !h.availableWhenReadOnly && h.isReadOnly() {
+				return ReadOnly
+			}
+
+			return Available
 		}
 
-		return Available
+		return NotReady
 	}
 
-	return NotReady
+	return Unavailable
 }
 
 // getWsrepLocalState queries the wsrep_local_state status from the database server and returns an int type enumerating the specific state.
-func getWsrepLocalState() WsrepStatus {
-	stmtOut, err := db.Prepare(WsrepLocalStateQuery)
+func (h *DBHandler) getWsrepLocalState() WsrepStatus {
+	stmtOut, err := h.db.Prepare(wsrepLocalStateQuery)
 	if err != nil {
-		logger.Errorf("Error preparing wsrep_local_state query: %v", err)
+		logrus.Errorf("Error preparing wsrep_local_state query: %v", err)
 		return Joining
 	}
 	defer func() {
 		if err := stmtOut.Close(); err != nil {
-			logger.Errorf("Error closing prepared statement: %v", err)
+			logrus.Errorf("Error closing prepared statement: %v", err)
 		}
 	}()
 
 	var variable string
-
 	var value int
 
 	err = stmtOut.QueryRow().Scan(&variable, &value)
 	if err != nil {
-		logger.Errorf("Error executing wsrep_local_state query: %v", err)
+		logrus.Errorf("Error executing wsrep_local_state query: %v", err)
 		return Joining
 	}
 
@@ -196,24 +210,23 @@ func getWsrepLocalState() WsrepStatus {
 }
 
 // isReadOnly queries the global variable read_only from the database server and returns whether the server is in read-only mode.
-func isReadOnly() bool {
-	stmtOut, err := db.Prepare(ReadOnlyQuery)
+func (h *DBHandler) isReadOnly() bool {
+	stmtOut, err := h.db.Prepare(readOnlyQuery)
 	if err != nil {
-		logger.Errorf("Error preparing read_only query: %v", err)
+		logrus.Errorf("Error preparing read_only query: %v", err)
 	}
 	defer func() {
 		if err := stmtOut.Close(); err != nil {
-			logger.Errorf("Error closing prepared statement: %v", err)
+			logrus.Errorf("Error closing prepared statement: %v", err)
 		}
 	}()
 
 	var variable string
-
 	var value string
 
 	err = stmtOut.QueryRow().Scan(&variable, &value)
 	if err != nil {
-		logger.Errorf("Error executing read_only query: %v", err)
+		logrus.Errorf("Error executing read_only query: %v", err)
 	}
 
 	if value == "OFF" {

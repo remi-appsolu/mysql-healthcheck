@@ -8,20 +8,40 @@ import (
 	"github.com/spf13/viper"
 )
 
-// readConfig reads the application config from a file
-func readConfig() {
+// CreateConfig creates a new config instance
+func CreateConfig() *viper.Viper {
+	config := viper.New()
+	config.SetConfigName(AppName)
+
+	workingDir, err := os.Getwd()
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	config.AddConfigPath(workingDir)
+
+	if runtime.GOOS == "windows" {
+		config.AddConfigPath(os.Getenv("PROGRAMFILES"))
+		config.AddConfigPath(os.Getenv("LOCALAPPDATA"))
+	} else {
+		config.AddConfigPath("/etc/sysconfig")
+		config.AddConfigPath("/etc/default")
+		config.AddConfigPath("/etc")
+		config.AddConfigPath("$HOME/.config")
+	}
+
 	if err := config.ReadInConfig(); err != nil { // Handle errors reading the config file
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found; ignore error if desired
 		} else {
-			logger.Fatal(err)
+			logrus.Fatal(err)
 		}
 	}
 
 	if len(config.ConfigFileUsed()) == 0 {
-		logger.Warn("No config file found.  Using default configuration!")
-	} else if logger.IsLevelEnabled(logrus.DebugLevel) {
-		logger.Debugf("Config loaded from %s", config.ConfigFileUsed())
+		logrus.Warn("No config file found.  Using default configuration!")
+	} else if logrus.IsLevelEnabled(logrus.DebugLevel) {
+		logrus.Debugf("Config loaded from %s", config.ConfigFileUsed())
 	}
 
 	config.SetDefault("connection.host", "localhost")
@@ -42,29 +62,6 @@ func readConfig() {
 			config.Set("http.path", "/"+config.GetString("http.path"))
 		}
 	}
-}
 
-// CreateConfig creates a new config instance
-func CreateConfig() {
-	config = viper.New()
-	config.SetConfigName(AppName)
-
-	workingDir, err := os.Getwd()
-	if err != nil {
-		logger.Fatal(err)
-	}
-
-	config.AddConfigPath(workingDir)
-
-	if runtime.GOOS == "windows" {
-		config.AddConfigPath(os.Getenv("PROGRAMFILES"))
-		config.AddConfigPath(os.Getenv("LOCALAPPDATA"))
-	} else {
-		config.AddConfigPath("/etc/sysconfig")
-		config.AddConfigPath("/etc/default")
-		config.AddConfigPath("/etc")
-		config.AddConfigPath("$HOME/.config")
-	}
-
-	readConfig()
+	return config
 }
