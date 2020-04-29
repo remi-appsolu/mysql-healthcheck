@@ -80,7 +80,8 @@ func BuildDSN(config *viper.Viper) string {
 	} else {
 		dsnConfig.Net = "tcp"
 		if config.IsSet("connection.port") {
-			dsnConfig.Addr = net.JoinHostPort(config.GetString("connection.host"), config.GetString("connection.port"))
+			dsnConfig.Addr = net.JoinHostPort(config.GetString("connection.host"),
+				config.GetString("connection.port"))
 		} else {
 			dsnConfig.Addr = config.GetString("connection.host")
 		}
@@ -134,6 +135,7 @@ func buildTLSConfig(config *viper.Viper) *tls.Config {
 		if err != nil {
 			logrus.Error(err)
 		}
+
 		if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
 			logrus.Error("Failed to append PEM.")
 		} else {
@@ -142,7 +144,8 @@ func buildTLSConfig(config *viper.Viper) *tls.Config {
 	}
 
 	if config.IsSet("connection.tls.cert") && config.IsSet("connection.tls.key") {
-		certs, err := tls.LoadX509KeyPair(config.GetString("connection.tls.cert"), config.GetString("connection.tls.key"))
+		certs, err := tls.LoadX509KeyPair(config.GetString("connection.tls.cert"),
+			config.GetString("connection.tls.key"))
 		if err != nil {
 			logrus.Error(err)
 		}
@@ -166,7 +169,8 @@ func (h *DBHandler) isConnected() bool {
 	return true
 }
 
-// GetStatus performs a health check on the database server and returns an int type enumerating the specific state.
+// GetStatus performs a health check on the database server and returns an int type
+// enumerating the specific state.
 func (h *DBHandler) GetStatus() ServerStatus {
 	if h.isConnected() {
 		wsrepState := h.getWsrepLocalState()
@@ -184,13 +188,15 @@ func (h *DBHandler) GetStatus() ServerStatus {
 	return Unavailable
 }
 
-// getWsrepLocalState queries the wsrep_local_state status from the database server and returns an int type enumerating the specific state.
+// getWsrepLocalState queries the wsrep_local_state status from the database
+// server and returns an int type enumerating the specific state.
 func (h *DBHandler) getWsrepLocalState() WsrepStatus {
 	stmtOut, err := h.db.Prepare(wsrepLocalStateQuery)
 	if err != nil {
 		logrus.Errorf("Error preparing wsrep_local_state query: %v", err)
 		return Joining
 	}
+
 	defer func() {
 		if err := stmtOut.Close(); err != nil {
 			logrus.Errorf("Error closing prepared statement: %v", err)
@@ -198,6 +204,7 @@ func (h *DBHandler) getWsrepLocalState() WsrepStatus {
 	}()
 
 	var variable string
+
 	var value int
 
 	err = stmtOut.QueryRow().Scan(&variable, &value)
@@ -209,12 +216,14 @@ func (h *DBHandler) getWsrepLocalState() WsrepStatus {
 	return WsrepStatus(value)
 }
 
-// isReadOnly queries the global variable read_only from the database server and returns whether the server is in read-only mode.
+// isReadOnly queries the global variable read_only from the database server
+// and returns whether the server is in read-only mode.
 func (h *DBHandler) isReadOnly() bool {
 	stmtOut, err := h.db.Prepare(readOnlyQuery)
 	if err != nil {
 		logrus.Errorf("Error preparing read_only query: %v", err)
 	}
+
 	defer func() {
 		if err := stmtOut.Close(); err != nil {
 			logrus.Errorf("Error closing prepared statement: %v", err)
@@ -222,6 +231,7 @@ func (h *DBHandler) isReadOnly() bool {
 	}()
 
 	var variable string
+
 	var value string
 
 	err = stmtOut.QueryRow().Scan(&variable, &value)
@@ -232,5 +242,6 @@ func (h *DBHandler) isReadOnly() bool {
 	if value == "OFF" {
 		return false
 	}
+
 	return true
 }
