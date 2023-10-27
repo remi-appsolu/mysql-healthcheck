@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"flag"
-	"fmt"
 	"os"
 	"os/signal"
 	"runtime"
@@ -21,9 +20,7 @@ const (
 	// version of this application - changed during compile time using ldflags
 )
 
-var (
-	version = "DEV-snapshot"
-)
+var version = "DEV-snapshot"
 
 func main() {
 	daemonMode := flag.Bool("d", false, "Run as a daemon and listen for HTTP connections on a socket")
@@ -32,7 +29,8 @@ func main() {
 	flag.Parse()
 
 	if *printVersion {
-		fmt.Printf("%s version %s, compiled for %s %s using %s\n", AppName,
+		logrus.SetLevel(logrus.InfoLevel)
+		logrus.Infof("%s version %s, compiled for %s %s using %s\n", AppName,
 			version, runtime.GOOS, runtime.GOARCH, runtime.Version())
 		os.Exit(0)
 	}

@@ -5,8 +5,8 @@ import (
 	"crypto/x509"
 	"database/sql"
 	"fmt"
-	"io/ioutil"
 	"net"
+	"os"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -131,7 +131,7 @@ func buildTLSConfig(config *viper.Viper) *tls.Config {
 	rootCertPool := x509.NewCertPool()
 
 	if config.IsSet("connection.tls.ca") {
-		pem, err := ioutil.ReadFile(config.GetString("connection.tls.ca"))
+		pem, err := os.ReadFile(config.GetString("connection.tls.ca"))
 		if err != nil {
 			logrus.Error(err)
 		}
