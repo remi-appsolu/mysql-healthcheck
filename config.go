@@ -1,3 +1,6 @@
+/*
+Config.go provides the program configuration using the Viper library.
+*/
 package main
 
 import (

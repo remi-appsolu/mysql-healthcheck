@@ -1,0 +1,5 @@
+linters:
+  disable:
+    - depguard
+issues:
+  exclude-use-default: false

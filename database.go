@@ -1,3 +1,6 @@
+/*
+Database.go provides the connection and health checking logic for the target database.
+*/
 package main
 
 import (
@@ -9,10 +12,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-
-	"github.com/go-sql-driver/mysql"
 )
 
 // DBHandler encapsulates all required objects to manage a database connection and run status checks.
@@ -32,27 +34,27 @@ const (
 	databaseMaxOpenConns    = 5
 	databaseConnMaxLifetime = time.Minute * 5
 
-	// wsrepLocalStateQuery returns status of local wsrep instance
+	// wsrepLocalStateQuery returns status of local wsrep instance.
 	wsrepLocalStateQuery = "SHOW STATUS LIKE 'wsrep_local_state';"
-	// readOnlyQuery determines if node is in read-only mode
+	// readOnlyQuery determines if node is in read-only mode.
 	readOnlyQuery = "SHOW GLOBAL VARIABLES LIKE 'read_only';"
 
-	// Joining means the node is in process of joining the cluster
+	// Joining means the node is in process of joining the cluster.
 	Joining WsrepStatus = 1
-	// Donor means the node is providing SST to a joining node
+	// Donor means the node is providing SST to a joining node.
 	Donor WsrepStatus = 2
-	// Joined means the node has received the SST but is not synced yet
+	// Joined means the node has received the SST but is not synced yet.
 	Joined WsrepStatus = 3 //nolint // Not explicitly used yet, but here for reference
-	// Synced means the node is in the cluster and fully operational
+	// Synced means the node is in the cluster and fully operational.
 	Synced WsrepStatus = 4
 
-	// Available means the node is ready to serve requests
+	// Available means the node is ready to serve requests.
 	Available ServerStatus = 1
-	// ReadOnly means the node is in read-only mode
+	// ReadOnly means the node is in read-only mode.
 	ReadOnly ServerStatus = 2
-	// NotReady means the node is not available or not ready to serve requests
+	// NotReady means the node is not available or not ready to serve requests.
 	NotReady ServerStatus = 3
-	// Unavailable means we are unable to connect to the node
+	// Unavailable means we are unable to connect to the node.
 	Unavailable ServerStatus = 4
 )
 
@@ -98,7 +100,9 @@ func BuildDSN(config *viper.Viper) string {
 	if config.GetBool("connection.tls.required") {
 		// Full TLS is enabled
 		dsnConfig.TLSConfig = "true"
-	} else if config.IsSet("connection.tls.ca") {
+	}
+
+	if config.IsSet("connection.tls.ca") {
 		// Full TLS is enabled with custom CA
 		tlsConfig := buildTLSConfig(config)
 		err := mysql.RegisterTLSConfig("custom", tlsConfig)
@@ -106,7 +110,9 @@ func BuildDSN(config *viper.Viper) string {
 			logrus.Fatalf("Failed to register custom TLS configuration: %v", err)
 		}
 		dsnConfig.TLSConfig = "custom"
-	} else if config.GetBool("connection.tls.skip-verify") {
+	}
+
+	if config.GetBool("connection.tls.skip-verify") {
 		// Enable SSL but skip TLS verification
 		dsnConfig.TLSConfig = "skip-verify"
 	}

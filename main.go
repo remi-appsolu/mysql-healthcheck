@@ -1,3 +1,10 @@
+/*
+mysql-healthcheck is a self-contained binary to run health checks on MySQL and MariaDB clusters.
+
+The mysql-healthcheck utility queries a target database to determine the WSREP
+status of the host and returns a HTTP response based on the outcome.  It supports
+Percona XtraDB, Galera, and other wsrep-based clustering applications.
+*/
 package main
 
 import (
