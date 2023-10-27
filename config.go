@@ -52,7 +52,7 @@ func CreateConfig() *viper.Viper {
 	config.SetDefault("connection.tls.enforced", false)
 	config.SetDefault("connection.tls.skip-verify", false)
 	config.SetDefault("http.addr", "::")
-	config.SetDefault("http.port", defaultHttpPort)
+	config.SetDefault("http.port", defaultHTTPPort)
 	config.SetDefault("http.path", "/")
 	config.SetDefault("options.available_when_donor", false)
 	config.SetDefault("options.available_when_readonly", false)
