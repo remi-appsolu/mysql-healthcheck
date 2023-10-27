@@ -5,25 +5,15 @@ builds:
 - env:
   - CGO_ENABLED=0
   goos:
-  - darwin
   - linux
   - windows
   goarch:
   - amd64
   - arm64
-  goarm:
-  - 7
-  ignore:
-  - goos: darwin
-    goarch: 386
+
 archives:
-- replacements:
-    amd64: x86_64
-    darwin: macos
-  format_overrides:
+- format_overrides:
   - goos: windows
-    format: zip
-  - goos: darwin
     format: zip
   files:
   - none*

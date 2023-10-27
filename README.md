@@ -2,7 +2,7 @@
 ![Go](https://img.shields.io/github/go-mod/go-version/danclough/mysql-healthcheck)
 [![Go Report Card](https://goreportcard.com/badge/github.com/danclough/mysql-healthcheck)](https://goreportcard.com/report/github.com/danclough/mysql-healthcheck)
 ![reviewdog](https://github.com/danclough/mysql-healthcheck/workflows/reviewdog/badge.svg)
-![Build](https://img.shields.io/github/workflow/status/danclough/mysql-healthcheck/goreleaser)
+![Build](https://img.shields.io/github/actions/workflow/status/danclough/mysql-healthcheck/release.yml?branch=main)
 [![Release](https://img.shields.io/github/release/danclough/mysql-healthcheck.svg)](https://github.com/danclough/mysql-healthcheck/releases/latest)
 [![License](https://img.shields.io/github/license/danclough/mysql-healthcheck)](https://github.com/danclough/mysql-healthcheck/blob/master/LICENSE)
 ![Downloads](https://img.shields.io/github/downloads/danclough/mysql-healthcheck/total)
@@ -10,9 +10,8 @@
 
 A self-contained binary to run health checks on MySQL and MariaDB clusters.  Supports Percona XtraDB, Galera, and other wsrep-based clustering applications.
 
-* Linux [x86_64](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_linux_x86_64.tar.gz) / [i386](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_linux_i386.tar.gz) / [ARMv6](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_linux_armv6.tar.gz) / [ARMv7](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_linux_armv7.tar.gz) / [ARM64](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_linux_arm64.tar.gz)
-* Windows [x86_64](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_windows_x86_64.zip) / [x86](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_windows_x86.zip)
-* MacOS [x86_64](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_macos_x86_64.zip)
+* Linux [amd64](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_linux_amd64.tar.gz) / [ARM64](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_linux_arm64.tar.gz)
+* Windows [amd64](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_windows_amd64.zip)
 
 ## Installation
 ### Linux
@@ -24,7 +23,7 @@ A self-contained binary to run health checks on MySQL and MariaDB clusters.  Sup
     2. Enable the service with `systemd enable mysql-healthcheck.service`
 5. Run the application from the command line, or run `systemd start mysql-healthcheck` to start the service.
 
-### Windows/MacOS
+### Windows
 1. Download and unzip the appropriate binary to any filesystem location.
 2. Create a configuration file as instructed below.
 3. Run the application from the command line, or follow the appropriate steps for your platform to run it as an OS service.
