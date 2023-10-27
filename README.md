@@ -2,7 +2,7 @@
 ![Go](https://img.shields.io/github/go-mod/go-version/danclough/mysql-healthcheck)
 [![Go Report Card](https://goreportcard.com/badge/github.com/danclough/mysql-healthcheck)](https://goreportcard.com/report/github.com/danclough/mysql-healthcheck)
 ![reviewdog](https://github.com/danclough/mysql-healthcheck/workflows/reviewdog/badge.svg)
-![Build](https://img.shields.io/github/actions/workflow/status/danclough/mysql-healthcheck/release.yml?branch=main)
+![Build](https://img.shields.io/github/actions/workflow/status/danclough/mysql-healthcheck/release.yml)
 [![Release](https://img.shields.io/github/release/danclough/mysql-healthcheck.svg)](https://github.com/danclough/mysql-healthcheck/releases/latest)
 [![License](https://img.shields.io/github/license/danclough/mysql-healthcheck)](https://github.com/danclough/mysql-healthcheck/blob/master/LICENSE)
 ![Downloads](https://img.shields.io/github/downloads/danclough/mysql-healthcheck/total)
