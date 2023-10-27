@@ -95,22 +95,20 @@ func BuildDSN(config *viper.Viper) string {
 		dsnConfig.Passwd = config.GetString("connection.password")
 	}
 
-	if config.GetBool("connection.tls.skip-verify") {
+	if config.GetBool("connection.tls.required") {
+		// Full TLS is enabled
+		dsnConfig.TLSConfig = "true"
+	} else if config.IsSet("connection.tls.ca") {
+		// Full TLS is enabled with custom CA
+		tlsConfig := buildTLSConfig(config)
+		err := mysql.RegisterTLSConfig("custom", tlsConfig)
+		if err != nil {
+			logrus.Fatalf("Failed to register custom TLS configuration: %v", err)
+		}
+		dsnConfig.TLSConfig = "custom"
+	} else if config.GetBool("connection.tls.skip-verify") {
 		// Enable SSL but skip TLS verification
 		dsnConfig.TLSConfig = "skip-verify"
-	} else {
-		if config.IsSet("connection.tls.ca") {
-			// Full TLS is enabled with custom CA
-			tlsConfig := buildTLSConfig(config)
-			err := mysql.RegisterTLSConfig("custom", tlsConfig)
-			if err != nil {
-				logrus.Fatalf("Failed to register custom TLS configuration: %v", err)
-			}
-			dsnConfig.TLSConfig = "custom"
-		} else if config.GetBool("connection.tls.required") {
-			// Full TLS is enabled
-			dsnConfig.TLSConfig = "true"
-		}
 	}
 
 	dsnConfig.Timeout = time.Second

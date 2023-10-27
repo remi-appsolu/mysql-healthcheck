@@ -10,10 +10,10 @@ import (
 
 const (
 	defaultDatabasePort = 3306
-	defaultHttpPort     = 5678
+	defaultHTTPPort     = 5678
 )
 
-// CreateConfig creates a new config instance
+// CreateConfig creates a new config instance.
 func CreateConfig() *viper.Viper {
 	config := viper.New()
 	config.SetConfigName(AppName)
@@ -35,7 +35,7 @@ func CreateConfig() *viper.Viper {
 		config.AddConfigPath("$HOME/.config")
 	}
 
-	if err := config.ReadInConfig(); err != nil { // Handle errors reading the config file
+	if err := config.ReadInConfig(); err != nil { // Handle errors reading the config file.
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 			logrus.Fatal(err)
 		}
@@ -57,11 +57,11 @@ func CreateConfig() *viper.Viper {
 	config.SetDefault("options.available_when_donor", false)
 	config.SetDefault("options.available_when_readonly", false)
 
-	// HTTP path must contain leading slash
+	// HTTP path must contain leading slash.
 	if config.GetString("http.path") != "/" {
 		pathRune := []rune(config.GetString("http.path"))
 		if string(pathRune[0:1]) != "/" {
-			// Provided path does not begin with leading slash
+			// Provided path does not begin with leading slash.
 			config.Set("http.path", "/"+config.GetString("http.path"))
 		}
 	}
