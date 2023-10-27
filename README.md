@@ -16,20 +16,27 @@ A self-contained binary to run health checks on MySQL and MariaDB clusters.  Sup
 ## Installation
 ### Linux
 1. Download and extract the appropriate binary for your architecture to `/usr/local/bin/`
-2. Make the binary executable with `chmod +x /usr/local/bin/mysql-healthcheck`
-3. Create a configuration file as instructed below.
-4. For systemd installation:
+```
+#### x86_64
+wget -O - https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_linux_amd64.tar.gz | tar -C /usr/local/bin/ -zxvf -
+
+#### ARM64
+wget -O - https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_linux_arm64.tar.gz | tar -C /usr/local/bin/ -zxvf -
+```
+2. Create a configuration file as instructed below.
+3. For systemd installation:
     1. Place the `mysql-healthcheck.service` unit file in your systemd system service directory (usually `/etc/systemd/system/`).
     2. Enable the service with `systemd enable mysql-healthcheck.service`
-5. Run the application from the command line, or run `systemd start mysql-healthcheck` to start the service.
+4. Run the application from the command line, or run `systemd start mysql-healthcheck` to start the service.
 
 ### Windows
-1. Download and unzip the appropriate binary to any filesystem location.
+1. Download and unzip the [binary](https://github.com/danclough/mysql-healthcheck/releases/latest/download/mysql-healthcheck_windows_amd64.zip) to any filesystem location.
 2. Create a configuration file as instructed below.
-3. Run the application from the command line, or follow the appropriate steps for your platform to run it as an OS service.
+3. Run the application from the command line, or follow the appropriate steps for Windows to run it as an OS service.
 
 ### Other Platforms
-Compile a binary for your target OS and architecture with `go build -ldflags="-X 'main.version=custom'"`.
+1. Clone the project to your machine
+2. Compile a binary for your target OS and architecture with `go build -ldflags="-X 'main.version=custom'"`.
 
 ## Usage
 ```
