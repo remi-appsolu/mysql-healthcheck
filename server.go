@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -36,13 +38,17 @@ func (s *HTTPServerHandler) StartServer() {
 	router.HandleFunc(path, s.serveHTTPHealthCheck)
 
 	s.server = &http.Server{
-		Addr:    socket,
-		Handler: router,
+		Addr:              socket,
+		Handler:           router,
+		ReadTimeout:       1 * time.Second,
+		WriteTimeout:      1 * time.Second,
+		IdleTimeout:       30 * time.Second,
+		ReadHeaderTimeout: 2 * time.Second,
 	}
 
 	logrus.Info("Starting HTTP server.")
 
-	if err := s.server.ListenAndServe(); err != http.ErrServerClosed {
+	if err := s.server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		logrus.Fatalf("Error opening HTTP socket: %v", err)
 	}
 }
@@ -75,8 +81,7 @@ func (s *HTTPServerHandler) serveHTTPHealthCheck(w http.ResponseWriter, req *htt
 		w.WriteHeader(http.StatusServiceUnavailable)
 	}
 
-	_, err := w.Write([]byte(msg))
-	if err != nil {
+	if _, err := w.Write([]byte(msg)); err != nil {
 		logrus.Errorf("Error writing data to HTTP response: %v", err)
 	}
 }

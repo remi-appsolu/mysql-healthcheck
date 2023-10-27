@@ -8,6 +8,11 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	defaultDatabasePort = 3306
+	defaultHttpPort     = 5678
+)
+
 // CreateConfig creates a new config instance
 func CreateConfig() *viper.Viper {
 	config := viper.New()
@@ -31,9 +36,7 @@ func CreateConfig() *viper.Viper {
 	}
 
 	if err := config.ReadInConfig(); err != nil { // Handle errors reading the config file
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			// Config file not found; ignore error if desired
-		} else {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 			logrus.Fatal(err)
 		}
 	}
@@ -45,11 +48,11 @@ func CreateConfig() *viper.Viper {
 	}
 
 	config.SetDefault("connection.host", "localhost")
-	config.SetDefault("connection.port", 3306)
+	config.SetDefault("connection.port", defaultDatabasePort)
 	config.SetDefault("connection.tls.enforced", false)
 	config.SetDefault("connection.tls.skip-verify", false)
 	config.SetDefault("http.addr", "::")
-	config.SetDefault("http.port", 5678)
+	config.SetDefault("http.port", defaultHttpPort)
 	config.SetDefault("http.path", "/")
 	config.SetDefault("options.available_when_donor", false)
 	config.SetDefault("options.available_when_readonly", false)

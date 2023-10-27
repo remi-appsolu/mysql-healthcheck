@@ -22,10 +22,10 @@ type DBHandler struct {
 	availableWhenReadOnly bool
 }
 
-// WsrepStatus represents the state of the wsrep process on the database server
+// WsrepStatus represents the state of the wsrep process on the database server.
 type WsrepStatus int
 
-// ServerStatus represents the state of the database server
+// ServerStatus represents the state of the database server.
 type ServerStatus int
 
 const (
@@ -160,8 +160,7 @@ func buildTLSConfig(config *viper.Viper) *tls.Config {
 }
 
 func (h *DBHandler) isConnected() bool {
-	err := h.db.Ping()
-	if err != nil {
+	if err := h.db.Ping(); err != nil {
 		logrus.Error(err)
 		return false
 	}
