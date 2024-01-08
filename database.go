@@ -30,6 +30,8 @@ type WsrepStatus int
 // ServerStatus represents the state of the database server.
 type ServerStatus int
 
+var customQuery string
+
 const (
 	databaseMaxOpenConns    = 5
 	databaseConnMaxLifetime = time.Minute * 5
@@ -64,6 +66,12 @@ func CreateDBHandler(config *viper.Viper, db *sql.DB) *DBHandler {
 	instance.db = db
 	instance.availableWhenDonor = config.GetBool("options.available_when_donor")
 	instance.availableWhenReadOnly = config.GetBool("options.available_when_readonly")
+
+	if config.IsSet("customQuery") {
+		customQuery = config.GetString("customQuery")
+	} else {
+		logrus.Info("Custom query is empty")
+	}
 
 	instance.db.SetMaxOpenConns(databaseMaxOpenConns)
 	instance.db.SetConnMaxLifetime(databaseConnMaxLifetime)
@@ -176,16 +184,22 @@ func (h *DBHandler) isConnected() bool {
 // enumerating the specific state.
 func (h *DBHandler) GetStatus() ServerStatus {
 	if h.isConnected() {
-		wsrepState := h.getWsrepLocalState()
-		if wsrepState == Synced || (wsrepState == Donor && h.availableWhenDonor) {
-			if !h.availableWhenReadOnly && h.isReadOnly() {
-				return ReadOnly
+		if customQuery != "" {
+			result := h.getCustomRequest(customQuery)
+			return result
+		} else {
+			logrus.Info("Executing normal queyr")
+			wsrepState := h.getWsrepLocalState()
+			if wsrepState == Synced || (wsrepState == Donor && h.availableWhenDonor) {
+				if !h.availableWhenReadOnly && h.isReadOnly() {
+					return ReadOnly
+				}
+
+				return Available
 			}
 
-			return Available
+			return NotReady
 		}
-
-		return NotReady
 	}
 
 	return Unavailable
@@ -217,6 +231,50 @@ func (h *DBHandler) getWsrepLocalState() WsrepStatus {
 	}
 
 	return WsrepStatus(value)
+}
+
+func (h *DBHandler) getCustomRequest(query string) ServerStatus {
+
+	logrus.Infof("Executing custom query: %s", query)
+
+	result, err := h.db.Exec(query)
+
+	if err != nil {
+		logrus.Errorf("Error executing CUSTOM query: %v", err)
+		return Unavailable
+	}
+
+	logrus.Infof("Result OK : %v", result)
+
+	/* else {
+		var index, rows int64
+		index, err = result.LastInsertId()
+		logrus.Infof("Index : %d, err : %v", index, err)
+		rows, err = result.RowsAffected()
+		logrus.Infof("Rows : %d, err : %v", rows, err)
+	}
+
+	//var value int64
+
+	var _, err2 = h.db.Query(customQuery)
+	if err2 != nil {
+		logrus.Errorf("Error2 executing CUSTOM query: %v", err2)
+		return Unavailable
+	} /*else {
+		var index, rows int64
+		index, err = result.LastInsertId()
+		logrus.Infof("Index : %d, err : %v", rows2, err2)
+		rows, err = result.RowsAffected()
+		logrus.Infof("Rows : %d, err : %v", rows, err2)
+	}*/
+
+	/*value, err = result.
+	if err != nil {
+		logrus.Errorf("Error getting Affected rows: %v", err)
+		return Unavailable
+	}*/
+
+	return Available
 }
 
 // isReadOnly queries the global variable read_only from the database server

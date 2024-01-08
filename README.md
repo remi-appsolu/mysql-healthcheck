@@ -118,3 +118,13 @@ options:
   available_when_donor: false
   available_when_readonly: false
 ```
+
+
+## Building : 
+
+    go build
+
+For linux : 
+
+    set GOOS=linux
+    go build
