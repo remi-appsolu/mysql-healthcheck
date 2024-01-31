@@ -128,3 +128,4 @@ For linux :
 
     set GOOS=linux
     go build
+    cp mysql-healthcheck ../../workspace-appsolu/AppsoluTaxi2/doc/appsolu/Mysql/install

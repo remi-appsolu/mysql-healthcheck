@@ -31,6 +31,7 @@ type WsrepStatus int
 type ServerStatus int
 
 var customQuery string
+var customResult string
 
 const (
 	databaseMaxOpenConns    = 5
@@ -67,10 +68,12 @@ func CreateDBHandler(config *viper.Viper, db *sql.DB) *DBHandler {
 	instance.availableWhenDonor = config.GetBool("options.available_when_donor")
 	instance.availableWhenReadOnly = config.GetBool("options.available_when_readonly")
 
-	if config.IsSet("customQuery") {
+	if config.IsSet("customQuery") && config.IsSet("customResult") {
 		customQuery = config.GetString("customQuery")
+		customResult = config.GetString("customResult")
+		logrus.Info("Custom query and result configured")
 	} else {
-		logrus.Info("Custom query is empty")
+		logrus.Info("Custom query or result is empty")
 	}
 
 	instance.db.SetMaxOpenConns(databaseMaxOpenConns)
@@ -235,16 +238,16 @@ func (h *DBHandler) getWsrepLocalState() WsrepStatus {
 
 func (h *DBHandler) getCustomRequest(query string) ServerStatus {
 
-	logrus.Infof("Executing custom query: %s", query)
+	logrus.Debugf("Executing custom query: %s", query)
 
-	result, err := h.db.Exec(query)
+	/*result, err := h.db.Exec(query)
 
 	if err != nil {
 		logrus.Errorf("Error executing CUSTOM query: %v", err)
 		return Unavailable
 	}
 
-	logrus.Infof("Result OK : %v", result)
+	logrus.Infof("Result OK : %v", result)*/
 
 	/* else {
 		var index, rows int64
@@ -274,7 +277,31 @@ func (h *DBHandler) getCustomRequest(query string) ServerStatus {
 		return Unavailable
 	}*/
 
-	return Available
+	var queryResult string
+
+	var result, err2 = h.db.Query(query)
+	if err2 != nil {
+		logrus.Errorf("Error2 executing CUSTOM query: %v", err2)
+		return NotReady
+	}
+
+	if result.Next() {
+		result.Scan(&queryResult)
+
+		if queryResult == customResult {
+			result.Close()
+			return Available
+		}
+	} else {
+		logrus.Errorf("No query result")
+		result.Close()
+		return NotReady
+	}
+	result.Close()
+
+	logrus.Errorf("Result is incorrect : '%s' != '%s'", queryResult, customResult)
+
+	return NotReady
 }
 
 // isReadOnly queries the global variable read_only from the database server
